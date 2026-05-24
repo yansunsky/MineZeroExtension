@@ -5,7 +5,8 @@
 [![NeoForge](https://img.shields.io/badge/NeoForge-21.1.172-orange.svg)](https://neoforged.net/)
 
 MineZero × Sophisticated Backpacks 兼容模组。让 MineZero 的"死亡回归"机制正确回档精妙背包内的物品。
-尚未进行人工代码审查，也没有进行多人游戏测试。可能存在潜在问题。
+
+使用DeepSeekV4编写的项目，尚未进行人工代码审查，也没有进行多人游戏测试。可能存在潜在问题。
 
 ## 解决的问题
 
