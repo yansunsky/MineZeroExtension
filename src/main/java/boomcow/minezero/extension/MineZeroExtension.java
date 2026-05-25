@@ -4,12 +4,14 @@ import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.logging.LogUtils;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import org.slf4j.Logger;
 
 /**
@@ -49,5 +51,22 @@ public class MineZeroExtension {
                                         }))
                         )
         );
+    }
+
+    /** 服务器启动后，读配置文件设置 gamerule 初始值 */
+    @SubscribeEvent
+    public void onServerStarted(ServerStartedEvent event) {
+        ServerLevel level = event.getServer().overworld();
+        if (level == null) return;
+
+        boolean configEnabled = ModConfigs.SAFE_CHECKPOINT.enabled.get();
+        var rule = level.getGameRules().getRule(ExtensionGameRules.SAFE_CHECKPOINT_ENABLED);
+        if (rule == null) return;
+
+        boolean current = rule.get();
+        if (current != configEnabled) {
+            rule.set(configEnabled, event.getServer());
+            LOGGER.info("[MineZeroExtension] Config enabled={} -> gamerule synced", configEnabled);
+        }
     }
 }

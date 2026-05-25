@@ -17,6 +17,7 @@ public class ModConfigs {
     }
 
     public static class SafeCheckpointConfig {
+        public final ModConfigSpec.BooleanValue enabled;
         public final ModConfigSpec.IntValue checkIntervalTicks;
         public final ModConfigSpec.IntValue enemySearchRadius;
 
@@ -36,19 +37,23 @@ public class ModConfigs {
 
         SafeCheckpointConfig(ModConfigSpec.Builder builder) {
             builder.comment("Safe checkpoint trigger settings")
-                   .comment("Enable/disable via gamerule: /gamerule safeCheckpointEnabled true|false")
+                   .comment("Runtime toggle: /gamerule safeCheckpointEnabled true|false")
                    .push("safeCheckpoint");
 
+            enabled = builder
+                    .comment("Initial default state. false = use MineZero's native auto-checkpoint. Default: true")
+                    .define("enabled", true);
+
             checkIntervalTicks = builder
-                    .comment("How often (in ticks) to check safe conditions. Default: 400 (20 seconds)")
-                    .defineInRange("checkIntervalTicks", 400, 20, 1200);
+                    .comment("How often (in ticks) to check safe conditions. Default: 800 (40 seconds)")
+                    .defineInRange("checkIntervalTicks", 800, 20, 1200);
 
             enemySearchRadius = builder
                     .comment("Radius (in blocks) to search for hostile mobs. Default: 24")
                     .defineInRange("enemySearchRadius", 24, 4, 128);
 
             builder.comment("Enable/disable each condition (true = check this condition)")
-                   .push("enabled");
+                   .push("conditions");
 
             overworldEnabled = builder.define("overworld", true);
             daytimeEnabled = builder.define("daytime", true);

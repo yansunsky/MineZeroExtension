@@ -1,14 +1,16 @@
 # MineZero Extension 配置文件
 # 安全条件触发检查点
-# 启用/禁用: /gamerule safeCheckpointEnabled true|false
+# 运行时切换: /gamerule safeCheckpointEnabled true|false
 [safeCheckpoint]
+	# 初始默认状态。false = 使用 MineZero 原生 autoCheckpointEnabled
+	enabled = true
 	# 检查间隔（ticks），默认400（20秒）
 	checkIntervalTicks = 400
 	# 敌对生物搜索半径（格），默认24
 	enemySearchRadius = 24
 
 	# 每条件是否启用，默认全开
-	[safeCheckpoint.enabled]
+	[safeCheckpoint.conditions]
 		overworld = true
 		daytime = true
 		healthFull = true
@@ -17,7 +19,7 @@
 		noHostileNearby = true
 
 	# 每条件概率门（0.0-1.0），先掷骰再判条件
-	# 级联累积: 0.90 × 0.75 × 0.75 × 0.55 × 0.60 × 1.00 ≈ 0.167 → 约2分钟1次
+	# 累积: 0.90 × 0.75 × 0.75 × 0.55 × 0.60 × 1.00 ≈ 0.167 → ~2分钟1次
 	[safeCheckpoint.chances]
 		overworldChance = 0.90
 		daytimeChance = 0.75
