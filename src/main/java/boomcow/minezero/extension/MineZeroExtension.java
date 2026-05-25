@@ -27,12 +27,14 @@ public class MineZeroExtension {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     public MineZeroExtension(IEventBus modEventBus, ModContainer modContainer) {
+        // 触发静态初始化，确保 GameRules.register("safeCheckpointEnabled") 被调用
+        var dummy = ExtensionGameRules.SAFE_CHECKPOINT_ENABLED;
+
         LOGGER.info("[MineZeroExtension] Initializing...");
-        LOGGER.info("[MineZeroExtension] SBP compat mixins active");
-        LOGGER.info("[MineZeroExtension] Safe checkpoint trigger active");
+        LOGGER.info("[MineZeroExtension] SBP compat mixins active | Safe checkpoint trigger active");
+        LOGGER.info("[MineZeroExtension] Gamerule: /gamerule safeCheckpointEnabled");
 
         NeoForge.EVENT_BUS.register(SafeCheckpointTicker.class);
-
         modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, ModConfigs.COMMON_CONFIG_SPEC);
     }
 }
