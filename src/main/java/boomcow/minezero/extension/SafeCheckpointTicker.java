@@ -25,7 +25,8 @@ public class SafeCheckpointTicker {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static int tickCounter = 0;
     private static final Random random = new Random();
-    private static boolean gameruleSynced = false;
+    /** 上次同步时 MineZero 规则是否被我们禁用 */
+    private static boolean minezeroAutoDisabled = false;
 
     @SubscribeEvent
     public static void onServerTickPost(ServerTickEvent.Post event) {
@@ -33,58 +34,100 @@ public class SafeCheckpointTicker {
         if (level == null) return;
 
         boolean ourEnabled = level.getGameRules().getBoolean(ExtensionGameRules.SAFE_CHECKPOINT_ENABLED);
+        boolean minezeroAutoEnabled = level.getGameRules().getBoolean(ModGameRules.AUTO_CHECKPOINT_ENABLED);
 
-        if (ourEnabled) {
-            disableMineZeroAuto(level, event.getServer());
+        // 我们的规则启用 → 禁用 MineZero 原生自动检查点
+        // 我们的规则禁用 → 恢复 MineZero 原生自动检查点
+        if (ourEnabled && minezeroAutoEnabled) {
+            level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED).set(false, event.getServer());
+            minezeroAutoDisabled = true;
+            LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> DISABLED");
+        } else if (!ourEnabled && !minezeroAutoEnabled && minezeroAutoDisabled) {
+            level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED).set(true, event.getServer());
+            minezeroAutoDisabled = false;
+            LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> RESTORED");
         }
 
         if (!ourEnabled) return;
         if (++tickCounter < ModConfigs.SAFE_CHECKPOINT.checkIntervalTicks.get()) return;
         tickCounter = 0;
 
-        LOGGER.info("[MExt Safe] Checking {} players...",
-                event.getServer().getPlayerList().getPlayers().size());
+        int total = event.getServer().getPlayerList().getPlayers().size();
+        LOGGER.info("[MExt Safe] ===== Checking {} player(s) (interval={}t) =====", total,
+                ModConfigs.SAFE_CHECKPOINT.checkIntervalTicks.get());
 
         for (ServerPlayer player : event.getServer().getPlayerList().getPlayers()) {
             if (tryTrigger(player)) break;
         }
     }
 
-    /** 安全检查点启用时，关闭 MineZero 的 autoCheckpointEnabled */
-    private static void disableMineZeroAuto(ServerLevel level, net.minecraft.server.MinecraftServer server) {
-        if (gameruleSynced) return;
-        var rule = level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED);
-        if (rule != null && rule.get()) {
-            rule.set(false, server);
-            gameruleSynced = true;
-            LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled DISABLED (safe trigger is active)");
-        }
-    }
-
+    /** 对单个玩家执行级联概率检查 */
     private static boolean tryTrigger(ServerPlayer player) {
         var c = ModConfigs.SAFE_CHECKPOINT;
         String name = player.getName().getString();
         Level level = player.level();
+        int radius = c.enemySearchRadius.get();
 
-        if (level.dimension() != Level.OVERWORLD) return false;
-        if (!roll(c.overworldChance.get())) return false;
+        // P1: 主世界
+        if (level.dimension() != Level.OVERWORLD) {
+            LOGGER.info("[MExt Safe] {} | STEP1 Overworld: FAIL (not in overworld)", name);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP1 Overworld: OK -> roll({}%)", name, pct(c.overworldChance.get()));
+        if (!roll(c.overworldChance.get())) { LOGGER.info("[MExt Safe] {} | STEP1 Overworld: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP1 Overworld: roll HIT", name);
 
-        if (!level.isDay()) return false;
-        if (!roll(c.daytimeChance.get())) return false;
+        // P2: 白天
+        if (!level.isDay()) {
+            LOGGER.info("[MExt Safe] {} | STEP2 Daytime: FAIL (not daytime)", name);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP2 Daytime: OK -> roll({}%)", name, pct(c.daytimeChance.get()));
+        if (!roll(c.daytimeChance.get())) { LOGGER.info("[MExt Safe] {} | STEP2 Daytime: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP2 Daytime: roll HIT", name);
 
-        if (player.getHealth() < player.getMaxHealth()) return false;
-        if (!roll(c.healthFullChance.get())) return false;
+        // P3: 满血
+        float hp = player.getHealth();
+        float maxHp = player.getMaxHealth();
+        if (hp < maxHp) {
+            LOGGER.info("[MExt Safe] {} | STEP3 Health: FAIL ({}/{})", name, (int)hp, (int)maxHp);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP3 Health: OK ({}/{}) -> roll({}%)", name, (int)hp, (int)maxHp, pct(c.healthFullChance.get()));
+        if (!roll(c.healthFullChance.get())) { LOGGER.info("[MExt Safe] {} | STEP3 Health: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP3 Health: roll HIT", name);
 
-        if (player.getFoodData().getFoodLevel() < 20) return false;
-        if (!roll(c.hungerFullChance.get())) return false;
+        // P4: 满饥饿
+        int hunger = player.getFoodData().getFoodLevel();
+        if (hunger < 20) {
+            LOGGER.info("[MExt Safe] {} | STEP4 Hunger: FAIL ({}/20)", name, hunger);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP4 Hunger: OK ({}/20) -> roll({}%)", name, hunger, pct(c.hungerFullChance.get()));
+        if (!roll(c.hungerFullChance.get())) { LOGGER.info("[MExt Safe] {} | STEP4 Hunger: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP4 Hunger: roll HIT", name);
 
-        if (hasNegativeEffect(player)) return false;
-        if (!roll(c.noNegativeEffectsChance.get())) return false;
+        // P5: 无负面效果
+        if (hasNegativeEffect(player)) {
+            LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: FAIL (has negative effect)", name);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: OK -> roll({}%)", name, pct(c.noNegativeEffectsChance.get()));
+        if (!roll(c.noNegativeEffectsChance.get())) { LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: roll HIT", name);
 
-        if (hasNearbyHostile(player, c.enemySearchRadius.get())) return false;
-        if (!roll(c.noHostileNearbyChance.get())) return false;
+        // P6: 无敌对生物（最贵操作）
+        boolean hostile = hasNearbyHostile(player, radius);
+        if (hostile) {
+            LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: FAIL (hostile in {} blocks)", name, radius);
+            return false;
+        }
+        LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: OK -> roll({}%)", name, pct(c.noHostileNearbyChance.get()));
+        if (!roll(c.noHostileNearbyChance.get())) { LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: roll MISS", name); return false; }
+        LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: roll HIT", name);
 
-        LOGGER.info("[MExt Safe] ALL PASSED! Triggering checkpoint for {}", name);
+        // ★ 全部通过
+        LOGGER.info("[MExt Safe] *** {} ALL PASSED! Checkpoint saved. ***", name);
         for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
             p.displayClientMessage(
                     Component.literal("[MineZero Extension] Safe checkpoint triggered for " + name)
@@ -94,6 +137,8 @@ public class SafeCheckpointTicker {
         CheckpointManager.setCheckpoint(player);
         return true;
     }
+
+    private static int pct(double d) { return (int)(d * 100); }
 
     private static boolean roll(double chance) {
         return random.nextDouble() < chance;
