@@ -12,7 +12,9 @@ A MineZero addon that adds Sophisticated Backpacks compatibility and an intellig
 Ensures backpack contents are correctly restored when MineZero triggers a Return by Death. Implemented via Mixin injection.
 
 ### 2. Safe Condition Checkpoint Trigger
-Automatically creates checkpoints when the player is in a safe state—overworld, daytime, full health, full hunger, no negative effects, and no hostile mobs nearby—using cascading probability gates to avoid excessive saves. Disables MineZero's native `autoCheckpointEnabled` when active.
+Automatically creates checkpoints when the player is in a safe state—overworld, daytime, full health, full hunger, no negative effects, and no hostile mobs nearby—using cascading probability gates. Each condition rolls a probability gate first, then checks the condition, reducing performance overhead.
+
+Disables MineZero's native `autoCheckpointEnabled` when active.
 
 ## Dependencies
 
@@ -27,8 +29,8 @@ Automatically creates checkpoints when the player is in a safe state—overworld
 
 | Command | Description |
 |---------|-------------|
-| `/gamerule safeCheckpointEnabled true\|false` | Enable/disable safe checkpoint trigger |
-| `/minezeroextension debugmode true\|false` | Toggle broadcast notification on save |
+| `/gamerule safeCheckpointEnabled true\|false` | Toggle safe checkpoint at runtime |
+| `/minezeroextension debugmode true\|false` | Toggle save notification broadcast |
 
 ## Configuration
 
@@ -36,10 +38,11 @@ Automatically creates checkpoints when the player is in a safe state—overworld
 
 ```toml
 [safeCheckpoint]
-checkIntervalTicks = 400           # 20 seconds
+enabled = true                    # Initial default. false = use MineZero native
+checkIntervalTicks = 400          # 20 seconds
 enemySearchRadius = 24
 
-[safeCheckpoint.enabled]
+[safeCheckpoint.conditions]
 overworld = true
 daytime = true
 healthFull = true
@@ -56,7 +59,7 @@ noNegativeEffectsChance = 0.60
 noHostileNearbyChance = 1.00
 ```
 
-Cascade: 0.90 × 0.75 × 0.75 × 0.55 × 0.60 × 1.00 ≈ 0.167 → ~1 save per 2 minutes when all conditions are met.
+Cascade: 0.90 × 0.75 × 0.75 × 0.55 × 0.60 × 1.00 ≈ 0.167 → ~1 save per 2 minutes.
 
 ## Build
 
