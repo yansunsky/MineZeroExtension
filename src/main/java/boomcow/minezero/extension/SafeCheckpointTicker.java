@@ -66,90 +66,52 @@ public class SafeCheckpointTicker {
         }
     }
 
-    /** 对单个玩家执行级联概率检查 */
+    /** 对单个玩家执行级联概率检查。先掷骰再判条件，节省开销。 */
     private static boolean tryTrigger(ServerPlayer player) {
         var c = ModConfigs.SAFE_CHECKPOINT;
-        String name = player.getName().getString();
+        //String name = player.getName().getString();
         Level level = player.level();
         int radius = c.enemySearchRadius.get();
 
-        // P1: 主世界
-        if (level.dimension() != Level.OVERWORLD) {
-            //LOGGER.info("[MExt Safe] {} | STEP1 Overworld: FAIL (not in overworld)", name);
-            return false;
+        // P1: 主世界（先掷骰，再判条件）
+        if (c.overworldEnabled.get()) {
+            if (!roll(c.overworldChance.get())) return false;
+            if (level.dimension() != Level.OVERWORLD) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP1 Overworld: OK -> roll({}%)", name, pct(c.overworldChance.get()));
-        if (!roll(c.overworldChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP1 Overworld: roll MISS", name);
-            return false;
-        }
-        //LOGGER.info("[MExt Safe] {} | STEP1 Overworld: roll HIT", name);
 
         // P2: 白天
-        if (!level.isDay()) {
-            //LOGGER.info("[MExt Safe] {} | STEP2 Daytime: FAIL (not daytime)", name);
-            return false;
+        if (c.daytimeEnabled.get()) {
+            if (!roll(c.daytimeChance.get())) return false;
+            if (!level.isDay()) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP2 Daytime: OK -> roll({}%)", name, pct(c.daytimeChance.get()));
-        if (!roll(c.daytimeChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP2 Daytime: roll MISS", name);
-            return false; }
-        //LOGGER.info("[MExt Safe] {} | STEP2 Daytime: roll HIT", name);
 
         // P3: 满血
-        float hp = player.getHealth();
-        float maxHp = player.getMaxHealth();
-        if (hp < maxHp) {
-            //LOGGER.info("[MExt Safe] {} | STEP3 Health: FAIL ({}/{})", name, (int)hp, (int)maxHp);
-            return false;
+        if (c.healthFullEnabled.get()) {
+            if (!roll(c.healthFullChance.get())) return false;
+            if (player.getHealth() < player.getMaxHealth()) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP3 Health: OK ({}/{}) -> roll({}%)", name, (int)hp, (int)maxHp, pct(c.healthFullChance.get()));
-        if (!roll(c.healthFullChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP3 Health: roll MISS", name);
-            return false; }
-        //LOGGER.info("[MExt Safe] {} | STEP3 Health: roll HIT", name);
 
         // P4: 满饥饿
-        int hunger = player.getFoodData().getFoodLevel();
-        if (hunger < 20) {
-            //LOGGER.info("[MExt Safe] {} | STEP4 Hunger: FAIL ({}/20)", name, hunger);
-            return false;
+        if (c.hungerFullEnabled.get()) {
+            if (!roll(c.hungerFullChance.get())) return false;
+            if (player.getFoodData().getFoodLevel() < 20) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP4 Hunger: OK ({}/20) -> roll({}%)", name, hunger, pct(c.hungerFullChance.get()));
-        if (!roll(c.hungerFullChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP4 Hunger: roll MISS", name);
-            return false;
-        }
-        //LOGGER.info("[MExt Safe] {} | STEP4 Hunger: roll HIT", name);
 
         // P5: 无负面效果
-        if (hasNegativeEffect(player)) {
-            //LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: FAIL (has negative effect)", name);
-            return false;
+        if (c.noNegativeEffectsEnabled.get()) {
+            if (!roll(c.noNegativeEffectsChance.get())) return false;
+            if (hasNegativeEffect(player)) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: OK -> roll({}%)", name, pct(c.noNegativeEffectsChance.get()));
-        if (!roll(c.noNegativeEffectsChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: roll MISS", name);
-            return false;
-        }
-        //LOGGER.info("[MExt Safe] {} | STEP5 NoDebuff: roll HIT", name);
 
-        // P6: 无敌对生物（最贵操作）
-        boolean hostile = hasNearbyHostile(player, radius);
-        if (hostile) {
-            //LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: FAIL (hostile in {} blocks)", name, radius);
-            return false;
+        // P6: 无敌对生物
+        if (c.noHostileNearbyEnabled.get()) {
+            if (!roll(c.noHostileNearbyChance.get())) return false;
+            if (hasNearbyHostile(player, radius)) return false;
         }
-        //LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: OK -> roll({}%)", name, pct(c.noHostileNearbyChance.get()));
-        if (!roll(c.noHostileNearbyChance.get())) {
-            //LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: roll MISS", name);
-            return false;
-        }
-        //LOGGER.info("[MExt Safe] {} | STEP6 NoHostile: roll HIT", name);
 
-        // ★ 全部通过
-        //LOGGER.info("[MExt Safe] *** {} ALL PASSED! Checkpoint saved. ***", name);
+        // 全部通过
         if (debugMode) {
+            String name = player.getName().getString();
             for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
                 p.displayClientMessage(
                         Component.literal("[MineZero Extension] Safe checkpoint triggered for " + name)

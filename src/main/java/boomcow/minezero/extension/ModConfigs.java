@@ -4,7 +4,7 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
  * MineZero Extension 配置文件。
- * <p>管理安全条件触发检查点的所有可配置参数。</p>
+ * <p>安全条件触发检查点参数：概率门 + 每条件启用开关。</p>
  */
 public class ModConfigs {
     public static final ModConfigSpec COMMON_CONFIG_SPEC;
@@ -19,6 +19,13 @@ public class ModConfigs {
     public static class SafeCheckpointConfig {
         public final ModConfigSpec.IntValue checkIntervalTicks;
         public final ModConfigSpec.IntValue enemySearchRadius;
+
+        public final ModConfigSpec.BooleanValue overworldEnabled;
+        public final ModConfigSpec.BooleanValue daytimeEnabled;
+        public final ModConfigSpec.BooleanValue healthFullEnabled;
+        public final ModConfigSpec.BooleanValue hungerFullEnabled;
+        public final ModConfigSpec.BooleanValue noNegativeEffectsEnabled;
+        public final ModConfigSpec.BooleanValue noHostileNearbyEnabled;
 
         public final ModConfigSpec.DoubleValue overworldChance;
         public final ModConfigSpec.DoubleValue daytimeChance;
@@ -40,33 +47,45 @@ public class ModConfigs {
                     .comment("Radius (in blocks) to search for hostile mobs. Default: 24")
                     .defineInRange("enemySearchRadius", 24, 4, 128);
 
-            builder.comment("Probability gates for each condition (0.0 to 1.0).")
+            builder.comment("Enable/disable each condition (true = check this condition)")
+                   .push("enabled");
+
+            overworldEnabled = builder.define("overworld", true);
+            daytimeEnabled = builder.define("daytime", true);
+            healthFullEnabled = builder.define("healthFull", true);
+            hungerFullEnabled = builder.define("hungerFull", true);
+            noNegativeEffectsEnabled = builder.define("noNegativeEffects", true);
+            noHostileNearbyEnabled = builder.define("noHostileNearby", true);
+
+            builder.pop();
+
+            builder.comment("Probability gates (0.0-1.0). Rolled BEFORE the condition check.")
                    .comment("20s interval → 3 checks/min → 6 checks/2min.")
                    .comment("Cumulative target: ~1 save/2min (0.167 per check).")
                    .push("chances");
 
             overworldChance = builder
-                    .comment("Probability gate after passing overworld check. Default: 0.90")
+                    .comment("Probability gate for overworld. Default: 0.90")
                     .defineInRange("overworldChance", 0.90, 0.0, 1.0);
 
             daytimeChance = builder
-                    .comment("Probability gate after passing daytime check. Default: 0.75")
+                    .comment("Probability gate for daytime. Default: 0.75")
                     .defineInRange("daytimeChance", 0.75, 0.0, 1.0);
 
             healthFullChance = builder
-                    .comment("Probability gate after passing health-full check. Default: 0.75")
+                    .comment("Probability gate for health. Default: 0.75")
                     .defineInRange("healthFullChance", 0.75, 0.0, 1.0);
 
             hungerFullChance = builder
-                    .comment("Probability gate after passing hunger-full check. Default: 0.55")
+                    .comment("Probability gate for hunger. Default: 0.55")
                     .defineInRange("hungerFullChance", 0.55, 0.0, 1.0);
 
             noNegativeEffectsChance = builder
-                    .comment("Probability gate after passing no-negative-effects check. Default: 0.60")
+                    .comment("Probability gate for negative effects. Default: 0.60")
                     .defineInRange("noNegativeEffectsChance", 0.60, 0.0, 1.0);
 
             noHostileNearbyChance = builder
-                    .comment("Probability gate after passing no-hostile-nearby check. Default: 1.00")
+                    .comment("Probability gate for no-hostile. Default: 1.00 (condition only)")
                     .defineInRange("noHostileNearbyChance", 1.00, 0.0, 1.0);
 
             builder.pop();
