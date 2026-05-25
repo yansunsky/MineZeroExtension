@@ -1,0 +1,13 @@
+package boomcow.minezero.extension;
+
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.GameRules.BooleanValue;
+
+/**
+ * MineZero Extension 自定义游戏规则。
+ * <p>安全检查点启用开关通过 gamerule 控制，与 MineZero 的 autoCheckpointEnabled 风格一致。</p>
+ */
+public class ExtensionGameRules {
+    public static final GameRules.Key<BooleanValue> SAFE_CHECKPOINT_ENABLED =
+            GameRules.register("safeCheckpointEnabled", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
+}

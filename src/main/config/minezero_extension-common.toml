@@ -1,0 +1,17 @@
+# MineZero Extension 配置文件
+# 安全条件触发检查点 —— 级联概率系统
+# 启用/禁用通过 gamerule: /gamerule safeCheckpointEnabled true|false
+[safeCheckpoint]
+	# 检查间隔（ticks），默认100（5秒）
+	checkIntervalTicks = 100
+	# 敌对生物搜索半径（格），默认24
+	enemySearchRadius = 24
+
+	# 每条件概率门（0.0-1.0），级联累积约 0.082 → 约1次/分钟
+	[safeCheckpoint.chances]
+		overworldChance = 0.90
+		daytimeChance = 0.65
+		healthFullChance = 0.70
+		hungerFullChance = 0.40
+		noNegativeEffectsChance = 0.50
+		noHostileNearbyChance = 1.00

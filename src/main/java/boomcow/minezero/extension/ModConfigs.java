@@ -1,6 +1,5 @@
 package boomcow.minezero.extension;
 
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
@@ -18,7 +17,6 @@ public class ModConfigs {
     }
 
     public static class SafeCheckpointConfig {
-        public final ModConfigSpec.BooleanValue enabled;
         public final ModConfigSpec.IntValue checkIntervalTicks;
         public final ModConfigSpec.IntValue enemySearchRadius;
 
@@ -30,11 +28,9 @@ public class ModConfigs {
         public final ModConfigSpec.DoubleValue noHostileNearbyChance;
 
         SafeCheckpointConfig(ModConfigSpec.Builder builder) {
-            builder.comment("Safe checkpoint trigger settings").push("safeCheckpoint");
-
-            enabled = builder
-                    .comment("Master switch for safe checkpoint trigger. Default: true")
-                    .define("enabled", true);
+            builder.comment("Safe checkpoint trigger settings")
+                   .comment("Enable/disable via gamerule: /gamerule safeCheckpointEnabled true|false")
+                   .push("safeCheckpoint");
 
             checkIntervalTicks = builder
                     .comment("How often (in ticks) to check safe conditions. Default: 100 (5 seconds)")
