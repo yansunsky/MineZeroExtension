@@ -5,8 +5,8 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.78'
 }
 
-group = 'boomcow.minezero.compat'
-version = project.findProperty('mod_version') ?: '1.0.0'
+group = 'boomcow.minezero.extension'
+version = project.findProperty('mod_version') ?: '2.0.0'
 
 base {
     archivesName = mod_id

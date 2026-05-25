@@ -1,4 +1,4 @@
-package boomcow.minezero.compat.sbp;
+package boomcow.minezero.extension;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
@@ -55,35 +55,35 @@ public class SBPBackpackHelper {
      * @param anchorPlayer 锚点玩家（用于获取服务端实例和在线玩家列表）
      */
     public static void captureSnapshot(ServerPlayer anchorPlayer) {
-        LOGGER.info("[MineZero-SBPCompat] captureSnapshot() CALLED anchor={}",
+        LOGGER.info("[MExt SBP] captureSnapshot() CALLED anchor={}",
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
 
         if (anchorPlayer == null || anchorPlayer.getServer() == null) {
-            LOGGER.warn("[MineZero-SBPCompat] captureSnapshot ABORTED: null anchor or server");
+            LOGGER.warn("[MExt SBP] captureSnapshot ABORTED: null anchor or server");
             return;
         }
         try {
             CompoundTag snapshot = new CompoundTag();
             BackpackStorage storage = BackpackStorage.get();
-            LOGGER.info("[MineZero-SBPCompat] BackpackStorage obtained: {}", storage.getClass().getName());
+            LOGGER.info("[MExt SBP] BackpackStorage obtained: {}", storage.getClass().getName());
             int[] count = {0};
             int playerCount = anchorPlayer.getServer().getPlayerList().getPlayers().size();
-            LOGGER.info("[MineZero-SBPCompat] Scanning {} online players for backpacks...", playerCount);
+            LOGGER.info("[MExt SBP] Scanning {} online players for backpacks...", playerCount);
 
             for (ServerPlayer player : anchorPlayer.getServer().getPlayerList().getPlayers()) {
                 final String playerName = player.getName().getString();
-                LOGGER.debug("[MineZero-SBPCompat] Scanning player: {}", playerName);
+                LOGGER.debug("[MExt SBP] Scanning player: {}", playerName);
 
                 PlayerInventoryProvider.get().runOnBackpacks(player, (backpackStack, handlerName, identifier, slot) -> {
-                    LOGGER.debug("[MineZero-SBPCompat]   Found backpack in {}[{}] slot={} item={}",
+                    LOGGER.debug("[MExt SBP]   Found backpack in {}[{}] slot={} item={}",
                             handlerName, identifier, slot, backpackStack.getHoverName().getString());
 
                     BackpackWrapper.fromStack(backpackStack).getContentsUuid().ifPresent(uuid -> {
-                        LOGGER.debug("[MineZero-SBPCompat]     UUID={} new={}", uuid, !snapshot.contains(uuid.toString()));
+                        LOGGER.debug("[MExt SBP]     UUID={} new={}", uuid, !snapshot.contains(uuid.toString()));
                         if (!snapshot.contains(uuid.toString())) {
                             CompoundTag contents = storage.getOrCreateBackpackContents(uuid).copy();
                             int contentKeys = contents.getAllKeys().size();
-                            LOGGER.debug("[MineZero-SBPCompat]     Contents keys={} empty={}", contentKeys, contents.isEmpty());
+                            LOGGER.debug("[MExt SBP]     Contents keys={} empty={}", contentKeys, contents.isEmpty());
                             if (!contents.isEmpty()) {
                                 snapshot.put(uuid.toString(), contents);
                                 count[0]++;
@@ -95,10 +95,10 @@ public class SBPBackpackHelper {
             }
 
             pendingSnapshot = snapshot;
-            LOGGER.info("[MineZero-SBPCompat] Snapshot CAPTURED: {} backpacks from {} players, NBT keys={}",
+            LOGGER.info("[MExt SBP] Snapshot CAPTURED: {} backpacks from {} players, NBT keys={}",
                     count[0], playerCount, snapshot.getAllKeys().size());
         } catch (Exception e) {
-            LOGGER.error("[MineZero-SBPCompat] Failed to capture BackpackStorage snapshot", e);
+            LOGGER.error("[MExt SBP] Failed to capture BackpackStorage snapshot", e);
         }
     }
 
@@ -111,18 +111,18 @@ public class SBPBackpackHelper {
      * @param anchorPlayer 锚点玩家
      */
     public static void applySnapshot(ServerPlayer anchorPlayer) {
-        LOGGER.info("[MineZero-SBPCompat] applySnapshot() CALLED anchor={} loadedSnapshot={} pendingSnapshot={}",
+        LOGGER.info("[MExt SBP] applySnapshot() CALLED anchor={} loadedSnapshot={} pendingSnapshot={}",
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null",
                 loadedSnapshot != null ? loadedSnapshot.getAllKeys().size() + " keys" : "null",
                 pendingSnapshot != null ? pendingSnapshot.getAllKeys().size() + " keys" : "null");
 
         CompoundTag snapshot = resolveSnapshot();
         if (snapshot == null || snapshot.isEmpty()) {
-            LOGGER.warn("[MineZero-SBPCompat] applySnapshot ABORTED: no snapshot available");
+            LOGGER.warn("[MExt SBP] applySnapshot ABORTED: no snapshot available");
             return;
         }
 
-        LOGGER.info("[MineZero-SBPCompat] Applying snapshot with {} UUIDs...", snapshot.getAllKeys().size());
+        LOGGER.info("[MExt SBP] Applying snapshot with {} UUIDs...", snapshot.getAllKeys().size());
         try {
             BackpackStorage storage = BackpackStorage.get();
             int count = 0;
@@ -138,7 +138,7 @@ public class SBPBackpackHelper {
                     int itemCountBefore = countItemsInNbt(currentContents);
                     int itemCountAfter = countItemsInNbt(savedContents);
 
-                    LOGGER.info("[MineZero-SBPCompat] Restoring UUID={} items: {} -> {}",
+                    LOGGER.info("[MExt SBP] Restoring UUID={} items: {} -> {}",
                             uuidKey, itemCountBefore, itemCountAfter);
 
                     storage.removeBackpackContents(uuid);
@@ -148,17 +148,17 @@ public class SBPBackpackHelper {
                     // 验证写入
                     CompoundTag verifyContents = storage.getOrCreateBackpackContents(uuid);
                     int verifyCount = countItemsInNbt(verifyContents);
-                    LOGGER.info("[MineZero-SBPCompat]   Verified UUID={} items={}", uuidKey, verifyCount);
+                    LOGGER.info("[MExt SBP]   Verified UUID={} items={}", uuidKey, verifyCount);
                 } catch (IllegalArgumentException e) {
-                    LOGGER.warn("[MineZero-SBPCompat] Invalid UUID in snapshot: {}", uuidKey);
+                    LOGGER.warn("[MExt SBP] Invalid UUID in snapshot: {}", uuidKey);
                 }
             }
 
             storage.setDirty();
-            LOGGER.info("[MineZero-SBPCompat] Snapshot APPLIED: {} UUIDs restored", count);
+            LOGGER.info("[MExt SBP] Snapshot APPLIED: {} UUIDs restored", count);
             loadedSnapshot = null;
         } catch (Exception e) {
-            LOGGER.error("[MineZero-SBPCompat] Failed to apply BackpackStorage snapshot", e);
+            LOGGER.error("[MExt SBP] Failed to apply BackpackStorage snapshot", e);
         }
     }
 
@@ -168,9 +168,9 @@ public class SBPBackpackHelper {
     public static void writeSnapshot(CompoundTag targetNbt, String key) {
         if (pendingSnapshot != null && !pendingSnapshot.isEmpty()) {
             targetNbt.put(key, pendingSnapshot.copy());
-            LOGGER.debug("[MineZero-SBPCompat] writeSnapshot: wrote {} UUIDs to NBT", pendingSnapshot.getAllKeys().size());
+            LOGGER.debug("[MExt SBP] writeSnapshot: wrote {} UUIDs to NBT", pendingSnapshot.getAllKeys().size());
         } else {
-            LOGGER.debug("[MineZero-SBPCompat] writeSnapshot: no pending snapshot to write");
+            LOGGER.debug("[MExt SBP] writeSnapshot: no pending snapshot to write");
         }
     }
 
@@ -180,9 +180,9 @@ public class SBPBackpackHelper {
     public static void readSnapshot(CompoundTag sourceNbt, String key) {
         if (sourceNbt.contains(key)) {
             loadedSnapshot = sourceNbt.getCompound(key);
-            LOGGER.info("[MineZero-SBPCompat] readSnapshot: loaded {} UUIDs from NBT", loadedSnapshot.getAllKeys().size());
+            LOGGER.info("[MExt SBP] readSnapshot: loaded {} UUIDs from NBT", loadedSnapshot.getAllKeys().size());
         } else {
-            LOGGER.debug("[MineZero-SBPCompat] readSnapshot: key '{}' not found in NBT", key);
+            LOGGER.debug("[MExt SBP] readSnapshot: key '{}' not found in NBT", key);
         }
     }
 
@@ -193,11 +193,11 @@ public class SBPBackpackHelper {
      */
     private static CompoundTag resolveSnapshot() {
         if (loadedSnapshot != null && !loadedSnapshot.isEmpty()) {
-            LOGGER.info("[MineZero-SBPCompat] resolveSnapshot: using loadedSnapshot ({} UUIDs)", loadedSnapshot.getAllKeys().size());
+            LOGGER.info("[MExt SBP] resolveSnapshot: using loadedSnapshot ({} UUIDs)", loadedSnapshot.getAllKeys().size());
             return loadedSnapshot;
         }
         if (pendingSnapshot != null) {
-            LOGGER.info("[MineZero-SBPCompat] resolveSnapshot: using pendingSnapshot ({} UUIDs)", pendingSnapshot.getAllKeys().size());
+            LOGGER.info("[MExt SBP] resolveSnapshot: using pendingSnapshot ({} UUIDs)", pendingSnapshot.getAllKeys().size());
         }
         return pendingSnapshot;
     }

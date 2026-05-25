@@ -1,7 +1,7 @@
-package boomcow.minezero.compat.sbp.mixin;
+package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointData;
-import boomcow.minezero.compat.sbp.SBPBackpackHelper;
+import boomcow.minezero.extension.SBPBackpackHelper;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import org.spongepowered.asm.mixin.Mixin;

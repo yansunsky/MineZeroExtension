@@ -1,7 +1,7 @@
-package boomcow.minezero.compat.sbp.mixin;
+package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointManager;
-import boomcow.minezero.compat.sbp.SBPBackpackHelper;
+import boomcow.minezero.extension.SBPBackpackHelper;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
@@ -30,7 +30,7 @@ public abstract class CheckpointManagerMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     static {
-        LOGGER.info("[MineZero-SBPCompat] CheckpointManagerMixin STATIC INIT — Mixin class loaded!");
+        LOGGER.info("[MineZeroExtension] CheckpointManagerMixin STATIC INIT — Mixin class loaded!");
     }
 
     /**
