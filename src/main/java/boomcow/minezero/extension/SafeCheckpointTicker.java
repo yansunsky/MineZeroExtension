@@ -33,17 +33,21 @@ public class SafeCheckpointTicker {
         ServerLevel level = event.getServer().overworld();
         if (level == null) return;
 
-        boolean ourEnabled = level.getGameRules().getBoolean(ExtensionGameRules.SAFE_CHECKPOINT_ENABLED);
-        boolean minezeroAutoEnabled = level.getGameRules().getBoolean(ModGameRules.AUTO_CHECKPOINT_ENABLED);
+        // gamerule 可能尚未注册，必须 null-check
+        var ourRule = level.getGameRules().getRule(ExtensionGameRules.SAFE_CHECKPOINT_ENABLED);
+        boolean ourEnabled = ourRule != null && ourRule.get();
+
+        var minezeroRule = level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED);
+        boolean minezeroAutoEnabled = minezeroRule != null && minezeroRule.get();
 
         // 我们的规则启用 → 禁用 MineZero 原生自动检查点
         // 我们的规则禁用 → 恢复 MineZero 原生自动检查点
-        if (ourEnabled && minezeroAutoEnabled) {
-            level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED).set(false, event.getServer());
+        if (ourEnabled && minezeroAutoEnabled && minezeroRule != null) {
+            minezeroRule.set(false, event.getServer());
             minezeroAutoDisabled = true;
             LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> DISABLED");
-        } else if (!ourEnabled && !minezeroAutoEnabled && minezeroAutoDisabled) {
-            level.getGameRules().getRule(ModGameRules.AUTO_CHECKPOINT_ENABLED).set(true, event.getServer());
+        } else if (!ourEnabled && !minezeroAutoEnabled && minezeroAutoDisabled && minezeroRule != null) {
+            minezeroRule.set(true, event.getServer());
             minezeroAutoDisabled = false;
             LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> RESTORED");
         }
