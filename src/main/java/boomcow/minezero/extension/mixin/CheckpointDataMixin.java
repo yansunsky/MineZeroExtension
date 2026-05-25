@@ -1,6 +1,7 @@
 package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointData;
+import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -43,10 +44,11 @@ public abstract class CheckpointDataMixin {
     private void minezeroSbp$onSaveReturn(CompoundTag nbt, HolderLookup.Provider provider,
                                           CallbackInfoReturnable<CompoundTag> cir) {
         SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SNAPSHOT_KEY);
+        PersistentDataHelper.writeSnapshot(cir.getReturnValue());
     }
 
     /**
-     * 在 CheckpointData.load() 返回前，从 NBT 中提取背包快照。
+     * 在 CheckpointData.load() 返回前，从 NBT 中提取背包快照和 ForgeData。
      * <p>
      * load 方法是静态工厂方法，参数 nbt 是来源 NBT。
      * RETURN 注入允许我们在构建完 CheckpointData 后读取额外的快照数据。
@@ -55,5 +57,6 @@ public abstract class CheckpointDataMixin {
     private static void minezeroSbp$onLoadReturn(CompoundTag nbt, HolderLookup.Provider lookupProvider,
                                                   CallbackInfoReturnable<CheckpointData> cir) {
         SBPBackpackHelper.readSnapshot(nbt, SNAPSHOT_KEY);
+        PersistentDataHelper.readSnapshot(nbt);
     }
 }

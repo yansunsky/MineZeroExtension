@@ -1,6 +1,7 @@
 package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointManager;
+import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,6 +43,11 @@ public abstract class CheckpointManagerMixin {
     @Inject(method = "setCheckpoint", at = @At("TAIL"), remap = false)
     private static void minezeroSbp$onSetCheckpointTail(ServerPlayer anchorPlayer, CallbackInfo ci) {
         SBPBackpackHelper.captureSnapshot(anchorPlayer);
+        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+            for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
+                PersistentDataHelper.capture(p);
+            }
+        }
     }
 
     /**
@@ -58,5 +64,15 @@ public abstract class CheckpointManagerMixin {
     @Inject(method = "restoreCheckpoint", at = @At("HEAD"), remap = false)
     private static void minezeroSbp$onRestoreCheckpointHead(ServerPlayer anchorPlayer, CallbackInfo ci) {
         SBPBackpackHelper.applySnapshot(anchorPlayer);
+    }
+
+    /** 在 restoreCheckpoint 完成后，应用所有玩家的 ForgeData 快照 */
+    @Inject(method = "restoreCheckpoint", at = @At("RETURN"), remap = false)
+    private static void minezeroForge$onRestoreCheckpointReturn(ServerPlayer anchorPlayer, CallbackInfo ci) {
+        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+            for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
+                PersistentDataHelper.apply(p);
+            }
+        }
     }
 }
