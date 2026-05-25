@@ -27,6 +27,7 @@ public class SafeCheckpointTicker {
     private static final Random random = new Random();
     /** 上次同步时 MineZero 规则是否被我们禁用 */
     private static boolean minezeroAutoDisabled = false;
+    static boolean debugMode = false;
 
     @SubscribeEvent
     public static void onServerTickPost(ServerTickEvent.Post event) {
@@ -148,11 +149,13 @@ public class SafeCheckpointTicker {
 
         // ★ 全部通过
         //LOGGER.info("[MExt Safe] *** {} ALL PASSED! Checkpoint saved. ***", name);
-        for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
-            p.displayClientMessage(
-                    Component.literal("[MineZero Extension] Safe checkpoint triggered for " + name)
-                            .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
-                    false);
+        if (debugMode) {
+            for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
+                p.displayClientMessage(
+                        Component.literal("[MineZero Extension] Safe checkpoint triggered for " + name)
+                                .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
+                        false);
+            }
         }
         CheckpointManager.setCheckpoint(player);
         return true;
