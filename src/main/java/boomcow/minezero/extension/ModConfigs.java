@@ -33,16 +33,16 @@ public class ModConfigs {
                    .push("safeCheckpoint");
 
             checkIntervalTicks = builder
-                    .comment("How often (in ticks) to check safe conditions. Default: 100 (5 seconds)")
-                    .defineInRange("checkIntervalTicks", 100, 20, 1200);
+                    .comment("How often (in ticks) to check safe conditions. Default: 400 (20 seconds)")
+                    .defineInRange("checkIntervalTicks", 400, 20, 1200);
 
             enemySearchRadius = builder
                     .comment("Radius (in blocks) to search for hostile mobs. Default: 24")
                     .defineInRange("enemySearchRadius", 24, 4, 128);
 
             builder.comment("Probability gates for each condition (0.0 to 1.0).")
-                   .comment("Each condition check, if the condition IS true, rolls this probability.")
-                   .comment("Cumulative default target: ~1 save/minute when all conditions met.")
+                   .comment("20s interval → 3 checks/min → 6 checks/2min.")
+                   .comment("Cumulative target: ~1 save/2min (0.167 per check).")
                    .push("chances");
 
             overworldChance = builder
@@ -50,20 +50,20 @@ public class ModConfigs {
                     .defineInRange("overworldChance", 0.90, 0.0, 1.0);
 
             daytimeChance = builder
-                    .comment("Probability gate after passing daytime check. Default: 0.65")
-                    .defineInRange("daytimeChance", 0.65, 0.0, 1.0);
+                    .comment("Probability gate after passing daytime check. Default: 0.75")
+                    .defineInRange("daytimeChance", 0.75, 0.0, 1.0);
 
             healthFullChance = builder
-                    .comment("Probability gate after passing health-full check. Default: 0.70")
-                    .defineInRange("healthFullChance", 0.70, 0.0, 1.0);
+                    .comment("Probability gate after passing health-full check. Default: 0.75")
+                    .defineInRange("healthFullChance", 0.75, 0.0, 1.0);
 
             hungerFullChance = builder
-                    .comment("Probability gate after passing hunger-full check. Default: 0.40")
-                    .defineInRange("hungerFullChance", 0.40, 0.0, 1.0);
+                    .comment("Probability gate after passing hunger-full check. Default: 0.55")
+                    .defineInRange("hungerFullChance", 0.55, 0.0, 1.0);
 
             noNegativeEffectsChance = builder
-                    .comment("Probability gate after passing no-negative-effects check. Default: 0.50")
-                    .defineInRange("noNegativeEffectsChance", 0.50, 0.0, 1.0);
+                    .comment("Probability gate after passing no-negative-effects check. Default: 0.60")
+                    .defineInRange("noNegativeEffectsChance", 0.60, 0.0, 1.0);
 
             noHostileNearbyChance = builder
                     .comment("Probability gate after passing no-hostile-nearby check. Default: 1.00")

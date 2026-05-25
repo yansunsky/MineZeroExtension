@@ -2,16 +2,19 @@
 # 安全条件触发检查点 —— 级联概率系统
 # 启用/禁用通过 gamerule: /gamerule safeCheckpointEnabled true|false
 [safeCheckpoint]
-	# 检查间隔（ticks），默认100（5秒）
-	checkIntervalTicks = 100
+	# 检查间隔（ticks），默认400（20秒）
+	checkIntervalTicks = 400
 	# 敌对生物搜索半径（格），默认24
 	enemySearchRadius = 24
 
-	# 每条件概率门（0.0-1.0），级联累积约 0.082 → 约1次/分钟
+	# 每条件概率门（0.0-1.0）
+	# 20秒间隔 → 3次/分钟 → 6次/2分钟
+	# 级联累积: 0.90 × 0.75 × 0.75 × 0.55 × 0.60 × 1.00 ≈ 0.167
+	# 3次/分钟 × 0.167 ≈ 0.50次/分钟 ≈ 2分钟1次
 	[safeCheckpoint.chances]
 		overworldChance = 0.90
-		daytimeChance = 0.65
-		healthFullChance = 0.70
-		hungerFullChance = 0.40
-		noNegativeEffectsChance = 0.50
+		daytimeChance = 0.75
+		healthFullChance = 0.75
+		hungerFullChance = 0.55
+		noNegativeEffectsChance = 0.60
 		noHostileNearbyChance = 1.00
