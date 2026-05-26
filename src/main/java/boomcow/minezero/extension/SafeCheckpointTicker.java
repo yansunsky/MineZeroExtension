@@ -114,7 +114,7 @@ public class SafeCheckpointTicker {
             String name = player.getName().getString();
             for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
                 p.displayClientMessage(
-                        Component.literal("[MineZero Extension] Safe checkpoint triggered for " + name)
+                        Component.translatable("minezero_extension.safe_checkpoint.triggered", name)
                                 .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
                         false);
             }
