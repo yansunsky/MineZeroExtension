@@ -23,8 +23,6 @@ public class SafeCheckpointTicker {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static int tickCounter = 0;
     private static final Random random = new Random();
-    /** 上次同步时 MineZero 规则是否被我们禁用 */
-    private static boolean minezeroAutoDisabled = false;
     public static boolean debugMode = false;
 
     @SubscribeEvent
@@ -43,12 +41,10 @@ public class SafeCheckpointTicker {
         // 我们的规则禁用 → 恢复 MineZero 原生自动检查点
         if (ourEnabled && minezeroAutoEnabled && minezeroRule != null) {
             minezeroRule.set(false, event.getServer());
-            minezeroAutoDisabled = true;
-            LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> DISABLED");
-        } else if (!ourEnabled && !minezeroAutoEnabled && minezeroAutoDisabled && minezeroRule != null) {
+            //LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> DISABLED");
+        } else if (!ourEnabled && !minezeroAutoEnabled && minezeroRule != null) {
             minezeroRule.set(true, event.getServer());
-            minezeroAutoDisabled = false;
-            LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> RESTORED");
+            //LOGGER.info("[MExt Safe] MineZero autoCheckpointEnabled -> RESTORED");
         }
 
         if (!ourEnabled) return;
