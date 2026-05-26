@@ -3,7 +3,10 @@ package boomcow.minezero.extension.mixin;
 import boomcow.minezero.checkpoint.CheckpointManager;
 import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
+import boomcow.minezero.extension.SafeCheckpointTicker;
 import com.mojang.logging.LogUtils;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
@@ -46,6 +49,15 @@ public abstract class CheckpointManagerMixin {
         if (anchorPlayer != null && anchorPlayer.getServer() != null) {
             for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
                 PersistentDataHelper.capture(p);
+            }
+            if (SafeCheckpointTicker.debugMode) {
+                String name = anchorPlayer.getName().getString();
+                for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
+                    p.displayClientMessage(
+                            Component.translatable("minezero_extension.safe_checkpoint.triggered", name)
+                                    .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
+                            false);
+                }
             }
         }
     }

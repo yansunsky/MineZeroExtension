@@ -3,8 +3,6 @@ package boomcow.minezero.extension;
 import boomcow.minezero.ModGameRules;
 import boomcow.minezero.checkpoint.CheckpointManager;
 import com.mojang.logging.LogUtils;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -27,7 +25,7 @@ public class SafeCheckpointTicker {
     private static final Random random = new Random();
     /** 上次同步时 MineZero 规则是否被我们禁用 */
     private static boolean minezeroAutoDisabled = false;
-    static boolean debugMode = false;
+    public static boolean debugMode = false;
 
     @SubscribeEvent
     public static void onServerTickPost(ServerTickEvent.Post event) {
@@ -109,16 +107,7 @@ public class SafeCheckpointTicker {
             if (hasNearbyHostile(player, radius)) return false;
         }
 
-        // 全部通过
-        if (debugMode) {
-            String name = player.getName().getString();
-            for (ServerPlayer p : player.getServer().getPlayerList().getPlayers()) {
-                p.displayClientMessage(
-                        Component.translatable("minezero_extension.safe_checkpoint.triggered", name)
-                                .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD),
-                        false);
-            }
-        }
+        // 全部通过（通知已由 CheckpointManagerMixin 统一处理）
         CheckpointManager.setCheckpoint(player);
         return true;
     }
