@@ -51,21 +51,6 @@ public class MineZeroExtension {
                                             return 1;
                                         }))
                         )
-                        .then(Commands.literal("globaldeathtrigger")
-                                .then(Commands.argument("enabled", BoolArgumentType.bool())
-                                        .executes(ctx -> {
-                                            boolean val = BoolArgumentType.getBool(ctx, "enabled");
-                                            ServerLevel level = ctx.getSource().getLevel();
-                                            var rule = level.getGameRules().getRule(ExtensionGameRules.GLOBAL_DEATH_TRIGGER);
-                                            if (rule != null) {
-                                                rule.set(val, ctx.getSource().getServer());
-                                                ctx.getSource().sendSuccess(
-                                                        () -> Component.literal("Global death trigger " + (val ? "enabled" : "disabled")),
-                                                        true);
-                                            }
-                                            return 1;
-                                        }))
-                        )
         );
     }
 
