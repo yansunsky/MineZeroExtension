@@ -1,20 +1,26 @@
 package boomcow.minezero.extension;
 
+import boomcow.minezero.ConfigHandler;
+import boomcow.minezero.MineZero;
+import boomcow.minezero.ModSoundEvents;
 import boomcow.minezero.checkpoint.CheckpointData;
 import boomcow.minezero.checkpoint.CheckpointManager;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
 
 /**
  * 全局死亡触发 — 任意玩家死亡都触发死亡回归。
  * <p>
  * 由 gamerule {@code globalDeathTrigger} 控制，默认关闭。
- * 当开启后，非锚玩家死亡也会被 MineZero 回归（前提是检查点中有该玩家的存档数据）。
+ * 非锚玩家触发时播放与 MineZero 相同的死亡铃声。
  * </p>
- * <p>与 {@code DeathEventHandler} 同优先级（HIGHEST），
- * 锚玩家仍由 MineZero 原生处理，我们只处理非锚玩家。</p>
  */
 public class GlobalDeathHandler {
 
@@ -33,5 +39,28 @@ public class GlobalDeathHandler {
         event.setCanceled(true);
         ServerPlayer sp = player;
         player.getServer().execute(() -> CheckpointManager.restoreCheckpoint(sp));
+
+        // 播放死亡铃声（MineZero 原生只给锚玩家播放，这里补上）
+        playChime(player);
+    }
+
+    private static void playChime(ServerPlayer player) {
+        String chime = ConfigHandler.getDeathChime();
+        if ("CLASSIC".equalsIgnoreCase(chime)) {
+            stopAndPlay(player, ResourceLocation.fromNamespaceAndPath(MineZero.MODID, "death_chime"),
+                    ModSoundEvents.DEATH_CHIME);
+        } else if ("ALTERNATE".equalsIgnoreCase(chime)) {
+            stopAndPlay(player, ResourceLocation.fromNamespaceAndPath(MineZero.MODID, "alt_death_chime"),
+                    ModSoundEvents.ALT_DEATH_CHIME);
+        }
+    }
+
+    private static void stopAndPlay(ServerPlayer player, ResourceLocation soundId,
+                                     DeferredHolder<SoundEvent, SoundEvent> holder) {
+        var stop = new ClientboundStopSoundPacket(soundId, SoundSource.PLAYERS);
+        if (player.connection != null) {
+            player.connection.send(stop);
+        }
+        player.playNotifySound(holder.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
     }
 }
