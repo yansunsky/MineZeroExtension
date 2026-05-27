@@ -6,6 +6,7 @@ import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.neoforged.fml.ModList;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -46,7 +47,9 @@ public abstract class CheckpointDataMixin {
     private void minezeroSbp$onSaveReturn(CompoundTag nbt, HolderLookup.Provider provider,
                                           CallbackInfoReturnable<CompoundTag> cir) {
         SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SBP_SNAPSHOT_KEY);
-        CuriosHelper.writeSnapshot(cir.getReturnValue(), CURIOS_SNAPSHOT_KEY);
+        if (ModList.get().isLoaded("curios")) {
+            CuriosHelper.writeSnapshot(cir.getReturnValue(), CURIOS_SNAPSHOT_KEY);
+        }
         PersistentDataHelper.writeSnapshot(cir.getReturnValue());
     }
 
@@ -60,7 +63,9 @@ public abstract class CheckpointDataMixin {
     private static void minezeroSbp$onLoadReturn(CompoundTag nbt, HolderLookup.Provider lookupProvider,
                                                   CallbackInfoReturnable<CheckpointData> cir) {
         SBPBackpackHelper.readSnapshot(nbt, SBP_SNAPSHOT_KEY);
-        CuriosHelper.readSnapshot(nbt, CURIOS_SNAPSHOT_KEY);
+        if (ModList.get().isLoaded("curios")) {
+            CuriosHelper.readSnapshot(nbt, CURIOS_SNAPSHOT_KEY);
+        }
         PersistentDataHelper.readSnapshot(nbt);
     }
 }

@@ -9,6 +9,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -51,7 +52,7 @@ public abstract class CheckpointManagerMixin {
                 SBPBackpackHelper.tickerInitiated,
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
         // 捕获 Curios 饰品栏快照（必须先于 SBP，因为饰品栏可能含有背包引用）
-        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+        if (anchorPlayer != null && anchorPlayer.getServer() != null && ModList.get().isLoaded("curios")) {
             for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
                 CuriosHelper.captureInventory(p);
             }
@@ -91,7 +92,7 @@ public abstract class CheckpointManagerMixin {
                 anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1,
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
         // 恢复 Curios 饰品栏（先于 SBP，确保饰品栏物品就位后背包内容能正确解析）
-        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+        if (anchorPlayer != null && anchorPlayer.getServer() != null && ModList.get().isLoaded("curios")) {
             for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
                 CuriosHelper.applyInventory(p);
             }
