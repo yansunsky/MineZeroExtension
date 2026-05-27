@@ -46,7 +46,9 @@ public abstract class CheckpointDataMixin {
     @Inject(method = "save", at = @At("RETURN"), remap = false)
     private void minezeroSbp$onSaveReturn(CompoundTag nbt, HolderLookup.Provider provider,
                                           CallbackInfoReturnable<CompoundTag> cir) {
-        SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SBP_SNAPSHOT_KEY);
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SBP_SNAPSHOT_KEY);
+        }
         if (ModList.get().isLoaded("curios")) {
             CuriosHelper.writeSnapshot(cir.getReturnValue(), CURIOS_SNAPSHOT_KEY);
         }
@@ -62,7 +64,9 @@ public abstract class CheckpointDataMixin {
     @Inject(method = "load", at = @At("RETURN"), remap = false)
     private static void minezeroSbp$onLoadReturn(CompoundTag nbt, HolderLookup.Provider lookupProvider,
                                                   CallbackInfoReturnable<CheckpointData> cir) {
-        SBPBackpackHelper.readSnapshot(nbt, SBP_SNAPSHOT_KEY);
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.readSnapshot(nbt, SBP_SNAPSHOT_KEY);
+        }
         if (ModList.get().isLoaded("curios")) {
             CuriosHelper.readSnapshot(nbt, CURIOS_SNAPSHOT_KEY);
         }

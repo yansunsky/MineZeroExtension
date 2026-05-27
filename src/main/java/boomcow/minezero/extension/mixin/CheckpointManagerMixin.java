@@ -49,7 +49,7 @@ public abstract class CheckpointManagerMixin {
     private static void minezeroSbp$onSetCheckpointTail(ServerPlayer anchorPlayer, CallbackInfo ci) {
         LOGGER.info("[MExt DEBUG] setCheckpoint TAIL tick={} tickerInit={} anchor={}",
                 anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1,
-                SBPBackpackHelper.tickerInitiated,
+                ModList.get().isLoaded("sophisticatedbackpacks") ? SBPBackpackHelper.tickerInitiated : false,
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
         // 捕获 Curios 饰品栏快照（必须先于 SBP，因为饰品栏可能含有背包引用）
         if (anchorPlayer != null && anchorPlayer.getServer() != null && ModList.get().isLoaded("curios")) {
@@ -58,7 +58,9 @@ public abstract class CheckpointManagerMixin {
             }
         }
         // 捕获 SBP BackpackStorage 快照
-        SBPBackpackHelper.captureSnapshot(anchorPlayer);
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.captureSnapshot(anchorPlayer);
+        }
         if (anchorPlayer != null && anchorPlayer.getServer() != null) {
             for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
                 PersistentDataHelper.capture(p);
@@ -98,7 +100,9 @@ public abstract class CheckpointManagerMixin {
             }
         }
         // 恢复 SBP BackpackStorage（确保背包 UUID 引用指向正确内容）
-        SBPBackpackHelper.applySnapshot(anchorPlayer);
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.applySnapshot(anchorPlayer);
+        }
     }
 
     /** 在 restoreCheckpoint 完成后，应用所有玩家的 ForgeData 快照 */

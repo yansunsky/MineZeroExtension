@@ -9,6 +9,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import org.slf4j.Logger;
 
@@ -104,9 +105,13 @@ public class SafeCheckpointTicker {
         }
 
         // 全部通过（通知已由 CheckpointManagerMixin 统一处理）
-        SBPBackpackHelper.tickerInitiated = true;
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.tickerInitiated = true;
+        }
         CheckpointManager.setCheckpoint(player);
-        SBPBackpackHelper.tickerInitiated = false;
+        if (ModList.get().isLoaded("sophisticatedbackpacks")) {
+            SBPBackpackHelper.tickerInitiated = false;
+        }
         return true;
     }
 
