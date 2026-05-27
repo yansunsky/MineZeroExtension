@@ -20,6 +20,7 @@ public class ModConfigs {
         public final ModConfigSpec.BooleanValue enabled;
         public final ModConfigSpec.IntValue checkIntervalTicks;
         public final ModConfigSpec.IntValue enemySearchRadius;
+        public final ModConfigSpec.BooleanValue globalDeathTrigger;
 
         public final ModConfigSpec.BooleanValue overworldEnabled;
         public final ModConfigSpec.BooleanValue daytimeEnabled;
@@ -51,6 +52,10 @@ public class ModConfigs {
             enemySearchRadius = builder
                     .comment("Radius (in blocks) to search for hostile mobs. Default: 24")
                     .defineInRange("enemySearchRadius", 24, 4, 128);
+
+            globalDeathTrigger = builder
+                    .comment("Global death trigger: any player death triggers Return by Death. Default: false")
+                    .define("globalDeathTrigger", false);
 
             builder.comment("Enable/disable each condition (true = check this condition)")
                    .push("conditions");

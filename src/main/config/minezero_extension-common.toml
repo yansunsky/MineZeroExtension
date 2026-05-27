@@ -4,6 +4,8 @@
 [safeCheckpoint]
 	# 初始默认状态。false = 使用 MineZero 原生 autoCheckpointEnabled
 	enabled = true
+	# 全局死亡回归: 任意玩家死亡触发回归（默认关闭）
+	globalDeathTrigger = false
 	# 检查间隔（ticks），默认400（20秒）
 	checkIntervalTicks = 400
 	# 敌对生物搜索半径（格），默认24
