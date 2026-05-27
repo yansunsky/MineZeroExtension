@@ -32,6 +32,12 @@ public class SBPBackpackHelper {
     private static final Logger LOGGER = LogUtils.getLogger();
     static final String SNAPSHOT_KEY = "backpackStorageSnapshot";
 
+    // ====== 调试计数器 ======
+    private static int captureCallCount = 0;
+    private static int applyCallCount = 0;
+    /** 由 SafeCheckpointTicker 设置，标记当前 setCheckpoint 是否由 ticker 触发 */
+    public static volatile boolean tickerInitiated = false;
+
     /**
      * 当前未持久化的快照。
      * <p>每次 setCheckpoint 调用后更新此值；
@@ -55,11 +61,15 @@ public class SBPBackpackHelper {
      * @param anchorPlayer 锚点玩家（用于获取服务端实例和在线玩家列表）
      */
     public static void captureSnapshot(ServerPlayer anchorPlayer) {
-        LOGGER.info("[MExt SBP] captureSnapshot() CALLED anchor={}",
+        captureCallCount++;
+        long tick = anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1;
+
+        LOGGER.info("[MExt SBP DEBUG] ===== captureSnapshot #{} tick={} tickerInit={} anchor={} =====",
+                captureCallCount, tick, tickerInitiated,
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
 
         if (anchorPlayer == null || anchorPlayer.getServer() == null) {
-            LOGGER.warn("[MExt SBP] captureSnapshot ABORTED: null anchor or server");
+            LOGGER.warn("[MExt SBP DEBUG] captureSnapshot ABORTED: null anchor or server");
             return;
         }
         try {
@@ -94,9 +104,18 @@ public class SBPBackpackHelper {
                 });
             }
 
+            // 保护旧快照：捕获前先保存，空快照时不覆盖
+            CompoundTag pendingSnapshot_before = pendingSnapshot;
             pendingSnapshot = snapshot;
-            LOGGER.info("[MExt SBP] Snapshot CAPTURED: {} backpacks from {} players, NBT keys={}",
-                    count[0], playerCount, snapshot.getAllKeys().size());
+            LOGGER.info("[MExt SBP DEBUG] Snapshot CAPTURED #{}: {} backpacks, NBT keys={}, data={}",
+                    captureCallCount, count[0], snapshot.getAllKeys().size(), snapshot);
+
+            // 如果是空快照且之前有数据，不覆盖（保护有效快照不被空快照覆盖）
+            if (count[0] == 0 && pendingSnapshot_before != null && !pendingSnapshot_before.isEmpty()) {
+                LOGGER.warn("[MExt SBP] EMPTY snapshot detected! Keeping previous snapshot with {} keys to prevent data loss",
+                        pendingSnapshot_before.getAllKeys().size());
+                pendingSnapshot = pendingSnapshot_before;
+            }
         } catch (Exception e) {
             LOGGER.error("[MExt SBP] Failed to capture BackpackStorage snapshot", e);
         }
@@ -111,18 +130,23 @@ public class SBPBackpackHelper {
      * @param anchorPlayer 锚点玩家
      */
     public static void applySnapshot(ServerPlayer anchorPlayer) {
-        LOGGER.info("[MExt SBP] applySnapshot() CALLED anchor={} loadedSnapshot={} pendingSnapshot={}",
+        applyCallCount++;
+        long tick = anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1;
+
+        LOGGER.info("[MExt SBP DEBUG] ===== applySnapshot #{} tick={} anchor={} loadedSnap={} pendingSnap={} =====",
+                applyCallCount, tick,
                 anchorPlayer != null ? anchorPlayer.getName().getString() : "null",
-                loadedSnapshot != null ? loadedSnapshot.getAllKeys().size() + " keys" : "null",
-                pendingSnapshot != null ? pendingSnapshot.getAllKeys().size() + " keys" : "null");
+                loadedSnapshot != null ? loadedSnapshot.getAllKeys().size() + "keys" : "null",
+                pendingSnapshot != null ? pendingSnapshot.getAllKeys().size() + "keys" : "null");
 
         CompoundTag snapshot = resolveSnapshot();
         if (snapshot == null || snapshot.isEmpty()) {
-            LOGGER.warn("[MExt SBP] applySnapshot ABORTED: no snapshot available");
+            LOGGER.warn("[MExt SBP DEBUG] applySnapshot #{} ABORTED: no snapshot available", applyCallCount);
             return;
         }
 
-        LOGGER.info("[MExt SBP] Applying snapshot with {} UUIDs...", snapshot.getAllKeys().size());
+        LOGGER.info("[MExt SBP DEBUG] Applying snapshot #{} with {} UUIDs, data={}",
+                applyCallCount, snapshot.getAllKeys().size(), snapshot);
         try {
             BackpackStorage storage = BackpackStorage.get();
             int count = 0;
@@ -155,7 +179,7 @@ public class SBPBackpackHelper {
             }
 
             storage.setDirty();
-            LOGGER.info("[MExt SBP] Snapshot APPLIED: {} UUIDs restored", count);
+            LOGGER.info("[MExt SBP DEBUG] Snapshot APPLIED #{}: {} UUIDs restored", applyCallCount, count);
             loadedSnapshot = null;
         } catch (Exception e) {
             LOGGER.error("[MExt SBP] Failed to apply BackpackStorage snapshot", e);
@@ -192,14 +216,17 @@ public class SBPBackpackHelper {
      * 解析要使用的快照：优先使用从持久化 NBT 加载的，回退到内存中的。
      */
     private static CompoundTag resolveSnapshot() {
+        // 优先使用当前会话的 pendingSnapshot（最新捕获）
+        if (pendingSnapshot != null && !pendingSnapshot.isEmpty()) {
+            LOGGER.info("[MExt SBP] resolveSnapshot: using pendingSnapshot ({} UUIDs)", pendingSnapshot.getAllKeys().size());
+            return pendingSnapshot;
+        }
+        // 回退到从 CheckpointData NBT 加载的持久化快照
         if (loadedSnapshot != null && !loadedSnapshot.isEmpty()) {
             LOGGER.info("[MExt SBP] resolveSnapshot: using loadedSnapshot ({} UUIDs)", loadedSnapshot.getAllKeys().size());
             return loadedSnapshot;
         }
-        if (pendingSnapshot != null) {
-            LOGGER.info("[MExt SBP] resolveSnapshot: using pendingSnapshot ({} UUIDs)", pendingSnapshot.getAllKeys().size());
-        }
-        return pendingSnapshot;
+        return null;
     }
 
     /**

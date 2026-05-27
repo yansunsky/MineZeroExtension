@@ -104,7 +104,9 @@ public class SafeCheckpointTicker {
         }
 
         // 全部通过（通知已由 CheckpointManagerMixin 统一处理）
+        SBPBackpackHelper.tickerInitiated = true;
         CheckpointManager.setCheckpoint(player);
+        SBPBackpackHelper.tickerInitiated = false;
         return true;
     }
 

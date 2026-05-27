@@ -1,6 +1,7 @@
 package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointData;
+import boomcow.minezero.extension.CuriosHelper;
 import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
 import net.minecraft.core.HolderLookup;
@@ -32,7 +33,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(value = CheckpointData.class, remap = false)
 public abstract class CheckpointDataMixin {
-    private static final String SNAPSHOT_KEY = "backpackStorageSnapshot";
+    private static final String SBP_SNAPSHOT_KEY = "backpackStorageSnapshot";
+    private static final String CURIOS_SNAPSHOT_KEY = "curiosSnapshot";
 
     /**
      * 在 CheckpointData.save() 返回前，将背包快照追加到 NBT。
@@ -43,7 +45,8 @@ public abstract class CheckpointDataMixin {
     @Inject(method = "save", at = @At("RETURN"), remap = false)
     private void minezeroSbp$onSaveReturn(CompoundTag nbt, HolderLookup.Provider provider,
                                           CallbackInfoReturnable<CompoundTag> cir) {
-        SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SNAPSHOT_KEY);
+        SBPBackpackHelper.writeSnapshot(cir.getReturnValue(), SBP_SNAPSHOT_KEY);
+        CuriosHelper.writeSnapshot(cir.getReturnValue(), CURIOS_SNAPSHOT_KEY);
         PersistentDataHelper.writeSnapshot(cir.getReturnValue());
     }
 
@@ -56,7 +59,8 @@ public abstract class CheckpointDataMixin {
     @Inject(method = "load", at = @At("RETURN"), remap = false)
     private static void minezeroSbp$onLoadReturn(CompoundTag nbt, HolderLookup.Provider lookupProvider,
                                                   CallbackInfoReturnable<CheckpointData> cir) {
-        SBPBackpackHelper.readSnapshot(nbt, SNAPSHOT_KEY);
+        SBPBackpackHelper.readSnapshot(nbt, SBP_SNAPSHOT_KEY);
+        CuriosHelper.readSnapshot(nbt, CURIOS_SNAPSHOT_KEY);
         PersistentDataHelper.readSnapshot(nbt);
     }
 }

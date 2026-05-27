@@ -1,6 +1,7 @@
 package boomcow.minezero.extension.mixin;
 
 import boomcow.minezero.checkpoint.CheckpointManager;
+import boomcow.minezero.extension.CuriosHelper;
 import boomcow.minezero.extension.PersistentDataHelper;
 import boomcow.minezero.extension.SBPBackpackHelper;
 import boomcow.minezero.extension.SafeCheckpointTicker;
@@ -45,6 +46,17 @@ public abstract class CheckpointManagerMixin {
      */
     @Inject(method = "setCheckpoint", at = @At("TAIL"), remap = false)
     private static void minezeroSbp$onSetCheckpointTail(ServerPlayer anchorPlayer, CallbackInfo ci) {
+        LOGGER.info("[MExt DEBUG] setCheckpoint TAIL tick={} tickerInit={} anchor={}",
+                anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1,
+                SBPBackpackHelper.tickerInitiated,
+                anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
+        // 捕获 Curios 饰品栏快照（必须先于 SBP，因为饰品栏可能含有背包引用）
+        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+            for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
+                CuriosHelper.captureInventory(p);
+            }
+        }
+        // 捕获 SBP BackpackStorage 快照
         SBPBackpackHelper.captureSnapshot(anchorPlayer);
         if (anchorPlayer != null && anchorPlayer.getServer() != null) {
             for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
@@ -75,6 +87,16 @@ public abstract class CheckpointManagerMixin {
      */
     @Inject(method = "restoreCheckpoint", at = @At("HEAD"), remap = false)
     private static void minezeroSbp$onRestoreCheckpointHead(ServerPlayer anchorPlayer, CallbackInfo ci) {
+        LOGGER.info("[MExt DEBUG] restoreCheckpoint HEAD tick={} anchor={}",
+                anchorPlayer != null ? anchorPlayer.level().getGameTime() : -1,
+                anchorPlayer != null ? anchorPlayer.getName().getString() : "null");
+        // 恢复 Curios 饰品栏（先于 SBP，确保饰品栏物品就位后背包内容能正确解析）
+        if (anchorPlayer != null && anchorPlayer.getServer() != null) {
+            for (ServerPlayer p : anchorPlayer.getServer().getPlayerList().getPlayers()) {
+                CuriosHelper.applyInventory(p);
+            }
+        }
+        // 恢复 SBP BackpackStorage（确保背包 UUID 引用指向正确内容）
         SBPBackpackHelper.applySnapshot(anchorPlayer);
     }
 
